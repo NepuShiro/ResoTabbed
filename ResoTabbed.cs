@@ -11,7 +11,7 @@ namespace ResoTabbed
 		public override string Name => "ResoTabbed";
 		public override string Author => "NepuShiro";
 		public override string Version => VERSION_CONSTANT;
-		public override string Link => "https://git.nepu.men/NepuShiro/ResoTabbed/";
+		public override string Link => "https://github.com/NepuShiro/ResoTabbed/";
 		
 		private static bool focused;
 		private static bool? previousFocused = null;
