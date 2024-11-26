@@ -7,10 +7,9 @@ namespace ResoTabbed
 {
 	public class ResoTabbed : ResoniteMod
 	{
-		internal const string VERSION_CONSTANT = "1.0.0";
 		public override string Name => "ResoTabbed";
 		public override string Author => "NepuShiro";
-		public override string Version => VERSION_CONSTANT;
+		public override string Version => "1.0.0";
 		public override string Link => "https://github.com/NepuShiro/ResoTabbed/";
 		
 		private static bool focused;
@@ -18,7 +17,7 @@ namespace ResoTabbed
 
 		public override void OnEngineInit()
 		{
-			Harmony harmony = new Harmony("com.NepuShiro.ResoTabbed");
+			Harmony harmony = new Harmony("net.NepuShiro.ResoTabbed");
 			harmony.PatchAll();
 			
 			Engine.Current.OnReady += () =>
