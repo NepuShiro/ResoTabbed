@@ -9,51 +9,65 @@ namespace ResoTabbed
 	{
 		public override string Name => "ResoTabbed";
 		public override string Author => "NepuShiro";
-		public override string Version => "1.0.0";
+		public override string Version => "1.1.0";
 		public override string Link => "https://github.com/NepuShiro/ResoTabbed/";
 		
-		private static bool focused;
-		private static bool? previousFocused = null;
+		private static bool _focused;
+
+		private static ModConfiguration _config;
+		
+		[AutoRegisterConfigKey]
+		private static readonly ModConfigurationKey<string> DynvarInternal = new ModConfigurationKey<string>("DynVar", "The Dynamic Variable to have the expose the focus state as", () => "User/IsFocused");
+
+		private static string DynVar => _config.GetValue(DynvarInternal);
+		private static bool _dynVarChanged;
 
 		public override void OnEngineInit()
 		{
+			_config = GetConfiguration();
+			_config!.Save(true);
+			
 			Harmony harmony = new Harmony("net.NepuShiro.ResoTabbed");
 			harmony.PatchAll();
 			
 			Engine.Current.OnReady += () =>
 			{
-				Application.focusChanged += (bool focus) =>
-				{
-					focused = focus;
-				};
+				Application.focusChanged += focus => _focused = focus;
+				DynvarInternal.OnChanged += value => _dynVarChanged = DynamicVariableHelper.IsValidName((string)value);
 			};
 		}
 
 		[HarmonyPatch(typeof(UserRoot))]
-		static class UserRootPatch
+		private static class UserRootPatch
 		{
+			private static DynamicValueVariable<bool> Variable { get; set; }
+
 			[HarmonyPatch("OnStart")]
 			[HarmonyPostfix]
-			static void OnStart(UserRoot __instance)
+			private static void OnStart(UserRoot __instance)
 			{
 				if (__instance == null || __instance.ActiveUser != __instance.LocalUser || __instance.World.IsUserspace()) return;
 				
-				var apple = __instance.Slot.GetComponentOrAttach<DynamicValueVariable<bool>>();
-				if (apple.VariableName.Value != "User/IsFocused") apple.VariableName.Value = "User/IsFocused";
-				if (apple.Value.Value == false) apple.Value.Value = true;
+				Variable = __instance.Slot.GetComponentOrAttach<DynamicValueVariable<bool>>();
+				if (Variable == null) return;
+				
+				Variable.VariableName.Value = DynVar;
+				Variable.Value.Value = true;
 			}
 			
 			[HarmonyPatch("OnCommonUpdate")]
 			[HarmonyPostfix]
-			static void OnCommonUpdate(UserRoot __instance)
+			private static void OnCommonUpdate(UserRoot __instance)
 			{
 				if (__instance == null || __instance.ActiveUser != __instance.LocalUser || __instance.World.IsUserspace()) return;
-				
-				if (previousFocused != focused)
+
+				if (_dynVarChanged && Variable != null)
 				{
-					__instance.Slot.WriteDynamicVariable("User/IsFocused", focused);
-					previousFocused = focused;
+					Variable.VariableName.Value = DynVar;
+					_dynVarChanged = false;
 				}
+				
+				__instance.Slot.WriteDynamicVariable(DynVar, _focused);
 			}
 		}
 	}
