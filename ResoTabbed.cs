@@ -1,7 +1,8 @@
+using System;
 using FrooxEngine;
 using HarmonyLib;
+using Renderite.Shared;
 using ResoniteModLoader;
-using UnityEngine;
 
 namespace ResoTabbed
 {
@@ -9,7 +10,7 @@ namespace ResoTabbed
 	{
 		public override string Name => "ResoTabbed";
 		public override string Author => "NepuShiro";
-		public override string Version => "1.1.0";
+		public override string Version => "2.1.0";
 		public override string Link => "https://github.com/NepuShiro/ResoTabbed/";
 		
 		private static bool _focused;
@@ -22,6 +23,8 @@ namespace ResoTabbed
 		private static string DynVar => _config.GetValue(DynvarInternal);
 		private static bool _dynVarChanged;
 
+		private static event Action<bool> WindowStateUpdated;
+
 		public override void OnEngineInit()
 		{
 			_config = GetConfiguration();
@@ -32,7 +35,7 @@ namespace ResoTabbed
 			
 			Engine.Current.OnReady += () =>
 			{
-				Application.focusChanged += focus => _focused = focus;
+				WindowStateUpdated += focus => _focused = focus;
 				DynvarInternal.OnChanged += value => _dynVarChanged = DynamicVariableHelper.IsValidName((string)value);
 			};
 		}
@@ -48,7 +51,7 @@ namespace ResoTabbed
 			{
 				if (__instance == null || __instance.ActiveUser != __instance.LocalUser || __instance.World.IsUserspace()) return;
 				
-				Variable = __instance.Slot.GetComponentOrAttach<DynamicValueVariable<bool>>();
+				Variable = __instance.Slot.GetComponentOrAttach<DynamicValueVariable<bool>>(x => x.VariableName.Value == DynVar);
 				if (Variable == null) return;
 				
 				Variable.VariableName.Value = DynVar;
@@ -68,6 +71,16 @@ namespace ResoTabbed
 				}
 				
 				__instance.Slot.WriteDynamicVariable(DynVar, _focused);
+			}
+		}
+
+		[HarmonyPatch(typeof(InputInterface), "UpdateWindowState")]
+		private static class InputInterfacePatch
+		{
+			[HarmonyPostfix]
+			private static void UpdateWindowState(WindowState state)
+			{
+				WindowStateUpdated?.Invoke(state.isWindowFocused);
 			}
 		}
 	}
