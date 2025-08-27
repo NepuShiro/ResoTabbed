@@ -10,7 +10,7 @@ namespace ResoTabbed
 	{
 		public override string Name => "ResoTabbed";
 		public override string Author => "NepuShiro";
-		public override string Version => "2.1.0";
+		public override string Version => "2.1.1";
 		public override string Link => "https://github.com/NepuShiro/ResoTabbed/";
 		
 		private static bool _focused;
